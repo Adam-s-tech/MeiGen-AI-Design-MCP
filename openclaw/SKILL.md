@@ -19,7 +19,7 @@ Merge this server into your mcporter configuration (`~/.config/mcporter/config.j
   "mcpServers": {
     "creative-toolkit": {
       "command": "npx",
-      "args": ["-y", "meigen@2.1.0"]
+      "args": ["-y", "meigen@2.0.2"]
     }
   }
 }

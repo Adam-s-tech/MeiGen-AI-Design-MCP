@@ -1,4 +1,4 @@
-# Authentication and result compatibility (2.1.0)
+# Authentication and result compatibility (2.0.2)
 
 The local npm MCP keeps API Key authentication, local file preparation/saving, BYOK and ComfyUI. No embedded OAuth client secret, browser login command or forced credential migration is added. Interactive remote clients may use OAuth through the Web `/api/mcp` endpoint once its separately reviewed deployment and registered client configuration are enabled. Existing API Keys remain valid.
 
