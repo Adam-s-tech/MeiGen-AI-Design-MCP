@@ -1,0 +1,15 @@
+# Authentication and result compatibility (2.1.0)
+
+The local npm MCP keeps API Key authentication, local file preparation/saving, BYOK and ComfyUI. No embedded OAuth client secret, browser login command or forced credential migration is added. Interactive remote clients may use OAuth through the Web `/api/mcp` endpoint once its separately reviewed deployment and registered client configuration are enabled. Existing API Keys remain valid.
+
+Remote OAuth requires a preregistered client ID, exact callback and resource. The Web authorization server supports confidential clients and explicitly configured public PKCE clients. Registered public loopback callbacks permit ephemeral ports while preserving the host and path; custom callbacks must be explicitly registered. It does not offer dynamic client registration. This change is not a claim that every MCP host can sign in without configuration.
+
+Completed ordinary image/video results now contain standard MCP `resource_link` items with recognized MIME types alongside the original structured JSON, URLs and local save path. Skill results retain partial-module handling and gain MIME types. Gallery search and detail results also provide preview resources. A host that cannot display a preview can still open/download the original artifact. For protocol versions before 2025-06-18, resource links become text links while standard image blocks remain available. Preview or download failure never authorizes a new paid generation.
+
+`check_generation` and `check_skill` are annotated as possibly writing: backend lookups may finalize expired tasks and settle refunds, although neither starts a replacement. Both are non-destructive and idempotent; search and uploads are non-idempotent because they consume quota. Preserve request IDs and report refunds only from actual status fields.
+
+Tests run without production credentials or paid generation. Tests import source through tsx and run before any build, including a clean checkout. Cross-repository guidance can be checked with `node scripts/ci/check-guidance-sync.mjs /path/to/reviewed-web`.
+
+Search is capped at three entries, including over-returned API responses. Each entry selects the matched still image (or the still thumbnail for a video) and provides a standard MCP `image` block when a safe preview can be prepared, plus its named `resource_link` and text fallback. Existing larger limit arguments remain accepted but are clamped. Bundled offline results use the same presentation.
+
+Inline previews only fetch direct HTTPS assets on `images.meigen.ai`, with no credentials or redirects. Downloads are limited to 8 MiB, decoded inputs to 16 MP, outputs to a 384px JPEG / 256 KiB, with a four-second download budget and a two-second sharp processing timeout. The sharp timeout excludes time waiting in its queue; these are not a hard end-to-end latency guarantee. Failure leaves the entry and link available; it must not cause another search or a paid generation. Unsupported hosts may render links instead of thumbnails. Actual Claude/ChatGPT acceptance is still required after release.

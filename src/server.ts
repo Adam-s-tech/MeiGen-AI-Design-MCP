@@ -47,7 +47,7 @@ Use the original imageUrl for upscale_image (PNG/JPEG/WebP, at most 64 MiB / 64 
 
 ${SKILL_ACCOUNT_GUIDE.authentication} Create keys: ${SKILL_ACCOUNT_GUIDE.apiKeysUrl}. ${SKILL_ACCOUNT_GUIDE.credits} Top up: ${SKILL_ACCOUNT_GUIDE.topUpUrl}; mobile: ${SKILL_ACCOUNT_GUIDE.mobileTopUpUrl}.
 
-Remote Streamable HTTP uses https://www.meigen.ai/api/mcp with Authorization: Bearer <MeiGen API key> in private host connection settings. Local npm uses npx -y meigen@2.0.1 with MEIGEN_API_TOKEN in the MCP server environment or existing private ~/.config/meigen/config.json. Reconnect after changes. Never request or expose credentials in chat. Only the Claude Code plugin adds /meigen:setup.
+Remote Streamable HTTP uses https://www.meigen.ai/api/mcp with Authorization: Bearer <MeiGen API key> in private host connection settings. Local npm uses npx -y meigen@2.1.0 with MEIGEN_API_TOKEN in the MCP server environment or existing private ~/.config/meigen/config.json. Reconnect after changes. Never request or expose credentials in chat. Only the Claude Code plugin adds /meigen:setup.
 
 Public discovery does not require a key. Local prompt enhancement and preferences do not require a MeiGen key either. Discovery success verifies connectivity, not paid credentials or balance. For ordinary image generation, use the caller's configured MeiGen, OpenAI-compatible or ComfyUI provider.
 
@@ -61,7 +61,7 @@ export function createServer(config = loadConfig()) {
   const apiClient = new MeiGenApiClient(config)
 
   const server = new McpServer(
-    { name: 'meigen', version: '2.0.1' },
+    { name: 'meigen', version: '2.1.0' },
     { instructions: SERVER_INSTRUCTIONS },
   )
 

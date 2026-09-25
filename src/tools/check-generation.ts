@@ -13,7 +13,7 @@ export function registerCheckGeneration(server: McpServer, apiClient: MeiGenApiC
       generationId: z.string().min(1).optional().describe('Accepted generation ID. Provide exactly one of generationId and requestId.'),
       requestId: z.string().uuid().optional().describe('Original workflow step UUID supplied to generate_image/video; authenticated lookup across hosts. Provide exactly one identifier.'),
       requestedMediaType: z.enum(['image', 'video']).optional().describe('Original workflow step intent, when known. Preserve it from nextAction.arguments to detect a completed result of the other media type; this does not change or resubmit the job.'),
-    }, outputSchema: generationOutputSchema, annotations: { readOnlyHint: true },
+    }, outputSchema: generationOutputSchema, annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
   }, async ({ generationId, requestId, requestedMediaType }, extra) => {
     if (Boolean(generationId) === Boolean(requestId)) return generationResult(errorOutput(new GenerationError('Provide exactly one of generationId and requestId.', 'invalid_identifier')))
     const context = { ...(generationId ? { generationId } : {}), ...(requestId ? { requestId: requestId.toLowerCase() } : {}), ...(requestedMediaType ? { requestedMediaType } : {}) }

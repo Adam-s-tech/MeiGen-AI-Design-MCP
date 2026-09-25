@@ -158,7 +158,7 @@ export function registerSkillTools(server: McpServer, config: MeiGenConfig) {
     purpose: z.enum(['reference', 'upscale']).default('reference').describe('Use upscale for enhancement attachments: preserves source dimensions until the backend asks for resizing acceptance.'),
     sourceUrl: z.string().url().max(4096).optional().describe('Actual public direct HTTPS image URL to prepare; choose either sourceUrl or imageBase64. Local paths go directly to a generation Skill image field, not this URL field.'),
     imageBase64: z.string().max(4 * 1024 * 1024).optional().describe('Actual raw base64 image bytes, max 3 MiB decoded. Exactly one input is required.'),
-  }, async (args: { sourceUrl?: string; imageBase64?: string; purpose?: 'reference' | 'upscale' }, extra?: { signal?: AbortSignal }) => {
+  }, { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }, async (args: { sourceUrl?: string; imageBase64?: string; purpose?: 'reference' | 'upscale' }, extra?: { signal?: AbortSignal }) => {
     if (extra?.signal?.aborted) return cancelledResult()
     if (!auth()) return skillUploadResult({ success: false, error: 'MEIGEN_API_TOKEN is required.' }, 401)
     if (Boolean(args.sourceUrl) === Boolean(args.imageBase64)) return skillUploadResult({ success: false, error: 'Provide exactly one of sourceUrl or actual imageBase64 bytes.', code: 'invalid_input' }, 400)
@@ -174,7 +174,7 @@ export function registerSkillTools(server: McpServer, config: MeiGenConfig) {
 
   for (const skill of SKILLS) {
     const tool = tools[skill]
-    server.tool(tool.name, `${SKILL_TOOLS[skill].description} Requires a MeiGen API key configured for this local npm server (MEIGEN_API_TOKEN or saved local configuration), and purchased credits only. Local files and external public HTTPS URLs are uploaded automatically. ${SKILL_FLOW}`, tool.schema,
+    server.tool(tool.name, `${SKILL_TOOLS[skill].description} Requires a MeiGen API key configured for this local npm server (MEIGEN_API_TOKEN or saved local configuration), and purchased credits only. Local files and external public HTTPS URLs are uploaded automatically. ${SKILL_FLOW}`, tool.schema, { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
       async (args: Record<string, unknown>, extra?: { signal?: AbortSignal }) => {
         const signal = extra?.signal
         if (signal?.aborted) return cancelledResult(skill, String(args.requestId))
@@ -208,7 +208,7 @@ export function registerSkillTools(server: McpServer, config: MeiGenConfig) {
   }
   server.tool('check_skill', 'Read all skill images, partial failures and refund states. No new charges. Follow nextAction: wait afterSeconds before polling (normally 10s); recover only when it says retry_request, with its exact parameters. Payment/auth/input failures and daily limits require the indicated action instead of polling. Show completed resource links.', {
     skill: z.enum(SKILLS), requestId: z.string().uuid(),
-  }, { readOnlyHint: true }, async ({ skill, requestId }: { skill: Skill; requestId: string }, extra?: { signal?: AbortSignal }) => {
+  }, { readOnlyHint: false, destructiveHint: false, idempotentHint: true }, async ({ skill, requestId }: { skill: Skill; requestId: string }, extra?: { signal?: AbortSignal }) => {
     if (extra?.signal?.aborted) return cancelledResult(skill, requestId)
     const headers = auth()
     if (!headers) return skillToolResult({ success: false, error: 'MEIGEN_API_TOKEN is required.' }, 401, 'status', skill, requestId)

@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Lint frontmatter
         run: node scripts/ci/check-frontmatter.mjs
@@ -47,11 +47,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - uses: pnpm/action-setup@v4
         with:
           version: 10
+
+      - name: Validate npm lock before import
+        run: npm ci --dry-run --ignore-scripts
 
       - name: Install locked deps
         run: |

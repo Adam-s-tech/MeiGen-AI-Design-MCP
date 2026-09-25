@@ -33,7 +33,7 @@ const call = (client,name,args) => client.callTool({name,arguments:args})
 
 test('fresh anonymous MCP client sees scenarios, source materials, version and host setup', async () => {
   await session(undefined,undefined,async client => {
-    assert.equal(client.getServerVersion().version,'2.0.1')
+    assert.equal(client.getServerVersion().version,'2.1.0')
     const {tools}=await client.listTools()
     assert.equal(tools.length,17)
     const description=name=>tools.find(t=>t.name===name).description
