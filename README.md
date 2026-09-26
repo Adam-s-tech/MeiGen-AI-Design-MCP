@@ -40,7 +40,7 @@
 
 An MCP server that helps your AI assistant create images, videos and ecommerce assets. Connect to the **remote server (14 tools)** or install the **local npm server (17 tools)**. Works in **Claude Code**, **Cursor**, **Codex**, **Windsurf**, **Roo Code**, **OpenClaw**, **Hermes Agent**, and other compatible MCP hosts.
 
-Version **2.0.0** adds five guided Skills: **background removal, Product Detail Images, Marketing Poster, AI Backgrounds and Upscale**. These run on MeiGen Cloud and require a MeiGen API key and purchased credits. The local server also supports OpenAI-compatible APIs and ComfyUI for general image generation; those providers do not run the five Skills.
+Version **2.0.0** adds five guided Skills: **background removal, Product Detail Images, Marketing Poster, AI Backgrounds and Upscale**. These run on MeiGen Cloud and require an authorized MeiGen account and purchased credits. Remote HTTP clients can use OAuth when enabled; the local npm/API Key compatibility path uses a private MeiGen key. The local server also supports OpenAI-compatible APIs and ComfyUI for general image generation; those providers do not run the five Skills.
 
 - Local general image generation supports three backends: **MeiGen Cloud**, **OpenAI-compatible APIs**, or **local ComfyUI**. Use `list_models` for current capabilities.
 - Built-in 1,446 curated prompt templates from [nanobanana-trending-prompts](https://github.com/jau123/nanobanana-trending-prompts) plus style-aware prompt enhancement
@@ -101,12 +101,13 @@ Detect the current client and inspect its MCP configuration without printing
 credentials. Preserve other servers and reuse an existing MeiGen entry.
 Prefer Streamable HTTP at https://www.meigen.ai/api/mcp. For Codex, use
 codex mcp add meigen --url https://www.meigen.ai/api/mcp
-Add bearer_token_env_var = "MEIGEN_API_TOKEN" only after that local
-environment variable is configured; otherwise leave authentication unset.
+When the server and client support automatic OAuth, run codex mcp login meigen
+or use the client authentication UI, and let me sign in and approve consent.
+Otherwise use a private API key; do not combine it with OAuth.
 If I need automatic local-file preparation, ComfyUI, or local-only tools, use
 the stdio command npx -y meigen@2.0.2 instead. Check that this exact npm
 version exists before configuring it; report an unavailable version.
-Guide me to enter my MeiGen key in local credentials settings or the launch
+If using a key, guide me to enter it in local credentials or the launch
 environment, never in this chat. Public lookups can be tested without a key.
 Reload/reconnect, inspect the actual tool list, and call list_skills to verify.
 If you cannot configure or reconnect this client, give me the exact manual
@@ -114,15 +115,15 @@ steps and say what remains unverified. If list_skills is missing, report it.
 Do not upload images, generate anything, or spend credits during installation.
 ```
 
-For manual setup, jump to [Codex / ChatGPT desktop](#codex), [ChatGPT web](#chatgpt-web), or the client-specific instructions below.
+For manual setup, jump to [Codex desktop / CLI / IDE](#codex), [ChatGPT web](#chatgpt-web), or the client-specific instructions below.
 
 ### 1. Prepare your account
 
-You can browse inspiration and inspect models or Skill prices without a key. To generate with MeiGen:
+You can browse inspiration and inspect models or Skill prices without signing in. For MeiGen Cloud generation:
 
-1. Open [API Keys](https://www.meigen.ai/profile/api-keys) in a desktop browser, sign in, and create a key. The key starts with `meigen_sk_`; the mobile site currently redirects this page.
-2. Open your [profile](https://www.meigen.ai/profile) and select **Top Up** to add **purchased credits** to the same account; on mobile use [Premium](https://www.meigen.ai/m/premium). API generation does not use daily free credits; the five Skills have no free attempts, including the first cutout. Use `list_skills` for current Skill prices.
-3. Add the key to your MCP host's connection settings. Keep it out of chat messages and shared config files.
+1. In a compatible remote HTTP client, use OAuth to sign in and review permissions when automatic account login is enabled. No brand-specific client ID or shared secret is required. For local npm or clients without OAuth, create a private key at [API Keys](https://www.meigen.ai/profile/api-keys).
+2. Use purchased credits on the connected account. MCP generation does not use daily free credits or Web free attempts. Check live prices with `list_models` / `list_skills`.
+3. Approve only the connection you started. You can revoke OAuth in [Connected apps](https://www.meigen.ai/oauth/connections). Never put API keys in chat or shared configuration.
 
 ### 2. Choose one connection
 
@@ -196,13 +197,16 @@ A source larger than 4096px on either edge or 16 million pixels returns `upscale
 
 ### Remote MCP Endpoint (zero-install, recommended)
 
-In your host's MCP settings, select **Streamable HTTP**, enter `https://www.meigen.ai/api/mcp`, and add the HTTP header `Authorization: Bearer YOUR_MEIGEN_API_KEY`. The exact settings screen varies by host. Claude Code also supports:
+Select **Streamable HTTP**, enter `https://www.meigen.ai/api/mcp`, then choose **Connect / Authenticate** and sign in to MeiGen. General OAuth uses client metadata (CIMD) or dynamic registration (DCR), with public-client authentication (`none`) and S256 PKCE. It is not restricted to a list of AI brands. Supporting MCP alone does not imply HTTP/OAuth support.
+
+For Claude Code:
 
 ```bash
-# MEIGEN_API_TOKEN must already be set in this terminal's environment.
-claude mcp add --transport http meigen https://www.meigen.ai/api/mcp \
-  --header "Authorization: Bearer $MEIGEN_API_TOKEN"
+claude mcp add --transport http meigen https://www.meigen.ai/api/mcp
+claude mcp login meigen
 ```
+
+Automatic login depends on the server rollout and client version. If unavailable, use a private `Authorization: Bearer <MeiGen API key>` header; local npm continues to use `MEIGEN_API_TOKEN`. The [remote guide](https://docs.meigen.ai/en/mcp/remote) covers OAuth, fallback credentials and client differences.
 
 The remote endpoint supports [stateless Streamable HTTP](https://blog.modelcontextprotocol.io/posts/2026-07-28/), including the 2026-07-28 protocol and compatible 2025 clients. **Stateless means no persistent MCP session is required.** Accepted generation jobs and their billing records still live on the server, so an interrupted conversation can recover them.
 
@@ -210,30 +214,20 @@ There is no npm install or local server process. Changes to remote tools require
 
 <a id="codex"></a>
 
-### Codex / ChatGPT desktop (local Codex host)
+### Codex desktop / CLI / IDE
 
 Use this setup for **Codex CLI, the Codex IDE extension, and the desktop app when using a local Codex host**. These clients share MCP configuration on the same host. ChatGPT web has a [different connection flow](#chatgpt-web). See the [official Codex MCP guide](https://developers.openai.com/codex/mcp).
 
 **Remote — recommended for MeiGen Cloud and Skills:**
 
 ```bash
-codex mcp add meigen --url https://www.meigen.ai/api/mcp \
-  --bearer-token-env-var MEIGEN_API_TOKEN
+codex mcp add meigen --url https://www.meigen.ai/api/mcp
+codex mcp login meigen
 ```
 
-The equivalent configuration below also sets timeouts suitable for Skills. Merge it into `~/.codex/config.toml`; if you used the command above, edit its existing `meigen` table instead of adding another one. Preserve your other servers.
+When switching an existing entry to OAuth, remove its fixed Authorization header or `bearer_token_env_var`; keep other servers. For longer Skills, set `tool_timeout_sec = 240` in the existing entry. General OAuth requires the server rollout and a compatible client version.
 
-```toml
-[mcp_servers.meigen]
-url = "https://www.meigen.ai/api/mcp"
-bearer_token_env_var = "MEIGEN_API_TOKEN"
-startup_timeout_sec = 30
-tool_timeout_sec = 240
-```
-
-**To try public lookups before configuring a key**, omit `--bearer-token-env-var` from the command and `bearer_token_env_var` from the TOML. Add them after setting the variable.
-
-Set `MEIGEN_API_TOKEN` locally in the environment that **launches Codex** before using authenticated tools. This is your MeiGen key, not an OpenAI API key. Codex does not automatically load a project's `.env.local`. If a desktop launch does not inherit your terminal variables, enter the `Authorization: Bearer …` header through its private MCP connection settings when available, or configure `http_headers.Authorization` yourself in your private user-level config. When using a direct Authorization header, remove `bearer_token_env_var` so the connection does not depend on that missing environment variable. Keep the key out of chat and shared project files.
+**API key fallback:** add `--bearer-token-env-var MEIGEN_API_TOKEN` instead of using OAuth login, and set that variable in the environment that launches Codex. A project's `.env.local` is not automatically loaded. Use private header settings if your desktop client cannot inherit that environment. Keep the key out of chat and shared files.
 
 **Local — for automatic local-file preparation, ComfyUI and local-only tools:** use this entry **instead of** the remote entry. Node.js 22 or newer is recommended.
 
@@ -252,11 +246,11 @@ Restart/reconnect after setup. In Codex CLI, `codex mcp list` checks registratio
 
 <a id="chatgpt-web"></a>
 
-### ChatGPT web (public lookups only)
+### ChatGPT custom remote connection
 
-For accounts and workspaces with custom MCP access, enable **Developer mode**, create a custom remote app/plugin, enter `https://www.meigen.ai/api/mcp`, and choose **No Authentication**. After connecting, select it in a conversation and request a public model, Skill-price or gallery lookup. Follow OpenAI's [Developer mode setup](https://developers.openai.com/api/docs/guides/developer-mode#how-to-use) for the current settings and availability. A chat message alone cannot install a local npm server into ChatGPT web.
+If your plan/workspace offers Developer mode and custom MCP connections, add `https://www.meigen.ai/api/mcp`, select **OAuth**, use automatic registration when offered and complete MeiGen sign-in/consent. This requires the server's generic OAuth rollout. See [OpenAI's setup guide](https://developers.openai.com/api/docs/guides/developer-mode#how-to-use) and the [MeiGen remote guide](https://docs.meigen.ai/en/mcp/remote).
 
-**Paid MeiGen tools are not supported through this ChatGPT web connection yet.** OpenAI's hosted MCP client [cannot send custom API keys](https://developers.openai.com/plugins/build/auth#client-identification), while MeiGen currently requires a Bearer API key for generation, image upload and `check_skill` recovery (`check_generation` by known generationId remains public; requestId recovery requires a key). Full support needs a MeiGen OAuth integration. Use Codex or another client that supports Bearer headers for those tools; do not put the key in chat or in the server URL.
+This standard MCP connection is separate from the marketplace adapter and its custom cards. Without OAuth, **No Authentication** supports public lookups only. Generation, upload and private recovery require authorization. ChatGPT cannot use a MeiGen API key as an OAuth client secret; do not put keys in chat or the server URL. A chat message cannot install local npm inside ChatGPT web.
 
 ### Local npm MCP (Node.js)
 
@@ -409,7 +403,7 @@ mcp_servers:
 
 An upstream Skill can write N scripts, call MeiGen for each first frame, then pass completed frame URLs to `generate_video(firstFrame=...)`. Reference clips (`referenceVideos`, `referenceAudios`) can be mixed in the same call and addressed from the prompt as "Video 1" / "Audio 1". It owns prompts, models/providers, ratios, approved count/budget and presentation. Creative planning and plugin agents are optional; resolved requests do not need repeated approval at every step.
 
-For MeiGen jobs, persist one UUID `requestId` and exact inputs per logical step. Use `wait: false` for an immediate task handle; local npm also accepts `download: false`. Existing local defaults remain `wait: true`, `download: true`; asynchronous calls skip download. Remote MCP returns URLs and has no download setting. Recover with `check_generation` using the original `requestId` or `generationId`. Request lookup requires a MeiGen key belonging to the same account; known generation-ID status remains public remotely. Read `structuredContent` for status, handles, URLs, errors and polling advice.
+For MeiGen jobs, persist one UUID `requestId` and exact inputs per logical step. Use `wait: false` for an immediate task handle; local npm also accepts `download: false`. Existing local defaults remain `wait: true`, `download: true`; asynchronous calls skip download. Remote MCP returns URLs and has no download setting. Recover with `check_generation` using the original `requestId` or `generationId`. Request lookup requires authorization for the same MeiGen account (OAuth remotely, or a MeiGen API key); known generation-ID status remains public remotely. Read `structuredContent` for status, handles, URLs, errors and polling advice.
 
 Local npm bounds concurrent API **submissions** at four, with polling/downloads outside those slots; ComfyUI executes one job at a time. The caller also bounds outstanding work and reserves in-flight costs within its approved budget. Actual backend rate limits and `Retry-After` remain authoritative. Parallel videos are allowed within authorized scope; no ten-image total or atomic batch spending guarantee applies.
 
@@ -419,24 +413,24 @@ See [persistent step IDs, frame/video calls and recovery rules](COMPOSABLE_WORKF
 
 ### MCP Tools
 
-Both entries expose the following 14 cloud tools. The local npm entry adds three local tools, for **17 total**. Read-only lookups do not spend generation credits; `check_skill` still requires the key that owns the request.
+Both entries expose the following 14 cloud tools. The local npm entry adds three local tools, for **17 total**. Read-only lookups do not spend generation credits; `check_skill` requires the original OAuth account or the API key that owns the request. Local npm uses an API key; remote HTTP also supports OAuth when enabled.
 
 | Tool | Entry | Billing / purpose |
 |---|---|---|
-| `search_gallery` | Both | No generation charge; search inspiration with image previews, at most 3 per call. With a MeiGen key configured the call is authenticated and counts against that account's daily search quota instead of the shared per-IP budget. Local npm also bundles 1,446 prompts. |
+| `search_gallery` | Both | No generation charge; search inspiration with image previews, at most 3 per call. With OAuth or a MeiGen key configured the call is authenticated and counts against that account's daily search quota instead of the shared per-IP budget. Local npm also bundles 1,446 prompts. |
 | `get_inspiration` | Both | No generation charge; full prompt, images and metadata for a gallery entry. |
 | `list_models` | Both | No generation charge; current supported models and options. |
 | `generate_image` | Both | Generate an image. Remote uses MeiGen purchased credits; local also supports configured BYOK/ComfyUI providers. |
-| `generate_video` | Both | MeiGen key and purchased credits; use the current model options from `list_models`. Reference clips go in `referenceVideos` / `referenceAudios` (`images.meigen.ai` URLs — normally a clip MeiGen generated earlier — or, on the local npm server only, local `.mp4`/`.mov`/`.wav`/`.mp3` files that are uploaded for you; remote MCP takes `images.meigen.ai` URLs only, and other hosts are rejected); per-model clip counts and second budgets come from `list_models`, and reference audio is never billed. |
+| `generate_video` | Both | Authorized MeiGen account and purchased credits; use the current model options from `list_models`. Reference clips go in `referenceVideos` / `referenceAudios` (`images.meigen.ai` URLs — normally a clip MeiGen generated earlier — or, on the local npm server only, local `.mp4`/`.mov`/`.wav`/`.mp3` files that are uploaded for you; remote MCP takes `images.meigen.ai` URLs only, and other hosts are rejected); per-model clip counts and second budgets come from `list_models`, and reference audio is never billed. |
 | `check_generation` | Both | No generation charge; recover by generationId or authenticated requestId. |
 | `list_skills` | Both | No key or generation charge; current Skill inputs, defaults and prices. |
-| `upload_skill_image` | Both | MeiGen key; prepares a reference without spending generation credits. |
+| `upload_skill_image` | Both | Authorized MeiGen account; prepares a reference without spending generation credits. |
 | `remove_background` | Both | MeiGen purchased credits; one transparent cutout. |
 | `generate_product_detail_images` | Both | MeiGen purchased credits; 1–6 images, billed per module. |
 | `generate_marketing_poster` | Both | MeiGen purchased credits; one poster, optional image references. |
 | `generate_ai_background` | Both | MeiGen purchased credits; one product image with a white, smart or custom background. |
 | `upscale_image` | Both | MeiGen purchased credits; faithful or creative enhancement from the original image. |
-| `check_skill` | Both | Same MeiGen key; no additional generation charge. Returns completed images, failed modules and refund states. |
+| `check_skill` | Both | Original OAuth account or owning API key; no additional generation charge. Returns completed images, failed modules and refund states. |
 | `enhance_prompt` | Local only | Local prompt enhancement; no generation charge. |
 | `manage_preferences` | Local only | Read/write local preferences; no generation charge. |
 | `comfyui_workflow` | Local only | Manage local ComfyUI workflows; no MeiGen generation charge. |
@@ -590,7 +584,7 @@ MeiGen MCP respects your privacy. Here's what happens with your data:
 - **ComfyUI (local)** — A local workflow with local files can run without cloud generation. Gallery queries and MeiGen Skills still use external services.
 - **MeiGen Cloud and Skills** — Prompts and reference images are processed by MeiGen and its generation providers; result images are stored on Cloudflare R2. See [MeiGen Privacy Policy](https://www.meigen.ai/privacy-policy).
 - **OpenAI-compatible** — Prompts and reference images are sent to the configured API endpoint. See your provider's privacy policy.
-- **Reference image upload** — Local files use the configured upload gateway (default `gen.meigen.ai`) and Cloudflare R2. Local MCP ordinary generation and standard Skill references target 4096px / 8 MiB; the standalone `meigen gen` CLI retains its 2 MiB target. Upscale keeps original dimensions and uses the limits above. Skill preparation removes metadata and preserves transparency; GIF references use the first frame. Remote Skill uploads require a MeiGen key. Reference URLs are accessible to anyone with the link. Preserve accepted URLs for retries, keep your originals and download results you need; URLs are not promised as permanent archival storage. ComfyUI can use local paths without uploading.
+- **Reference image upload** — Local files use the configured upload gateway (default `gen.meigen.ai`) and Cloudflare R2. Local MCP ordinary generation and standard Skill references target 4096px / 8 MiB; the standalone `meigen gen` CLI retains its 2 MiB target. Upscale keeps original dimensions and uses the limits above. Skill preparation removes metadata and preserves transparency; GIF references use the first frame. Remote Skill uploads require MeiGen account authorization (OAuth or API key). Reference URLs are accessible to anyone with the link. Preserve accepted URLs for retries, keep your originals and download results you need; URLs are not promised as permanent archival storage. ComfyUI can use local paths without uploading.
 - **Gallery search** — With a search query, the MeiGen API is queried (your query text is sent to `www.meigen.ai`); category browsing and offline fallback use bundled local data. **Prompt enhancement** runs locally with no external calls.
 
 The local npm server adds no telemetry. Requests sent to MeiGen are subject to its service and privacy policies.
@@ -634,7 +628,7 @@ For Skill client implementers: generate `requestId` internally, keep it with the
 - **Local npm:** change pinned configurations to `meigen@2.0.2` and restart; global installations can run `npm install -g meigen@2.0.2`. Expect 17 tools. Check that the version is available on npm first.
 - **Plugin users:** update the Claude marketplace plugin, OpenClaw native plugin or standalone ClawHub Skill separately. Updating npm alone does not replace installed instruction files. Do not add a second MCP entry when the plugin already supplies one.
 - **Composable calls:** local `wait: true` / `download: true` remain defaults. New workflows should persist UUID `requestId`, use `wait: false` and recover by that ID. Remote legacy `attemptId` remains accepted; older receipts cannot retroactively prove every historical parameter mismatch. Update plugin instructions as well as the server to get the optional creative flow.
-- **Existing configuration and jobs:** general generation keeps its MeiGen/OpenAI/ComfyUI configuration; the five Skills need a MeiGen key and purchased credits. Preserve IDs and inputs for interrupted jobs and recover them; an upgrade is not a reason to resubmit a paid request.
+- **Existing configuration and jobs:** general generation keeps its MeiGen/OpenAI/ComfyUI configuration; the five Skills need an authorized MeiGen account and purchased credits. Preserve IDs and inputs for interrupted jobs and recover them; an upgrade is not a reason to resubmit a paid request.
 - **Input changes:** local Skill paths must be absolute, `~/` or `file://`; relative paths are rejected instead of being resolved against a hidden process directory. Images lose metadata, GIF references use the first frame, and Upscale needs a still original. Keep original assets and download results you need; result links are not a permanent-storage guarantee.
 
 ## Releasing
