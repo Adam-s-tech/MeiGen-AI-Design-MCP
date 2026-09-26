@@ -1,12 +1,12 @@
 ---
-name: "MeiGen AI Image & Video Generator"
+name: "MeiGen"
 description: Compose MeiGen image/video and five dedicated image tools inside an existing workflow, or opt into creative planning. Preserves caller prompts, parameters, approved count and budget; includes discovery and recoverable task handles.
 version: 2.0.2
 homepage: https://github.com/jau123/MeiGen-AI-Design-MCP
 metadata: {"clawdbot":{"emoji":"🎨","requires":{"bins":["mcporter","npx","node"]}}}
 ---
 
-# Creative Toolkit
+# MeiGen
 
 This standalone ClawHub Skill supplies instructions. It does not install an MCP connection by itself. Its version is independent of the npm server and the `meigen-ai-design` plugin.
 
