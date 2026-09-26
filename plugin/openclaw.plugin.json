@@ -2,7 +2,7 @@
   "id": "meigen-ai-design",
   "name": "MeiGen",
   "description": "Five dedicated MeiGen image workflows plus ordinary image/video generation through MCP. Requires MeiGen purchased credits for dedicated workflows; ordinary images also support configured BYOK or ComfyUI.",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "skills": [
     "./skills"
   ],
