@@ -4,7 +4,7 @@ export const SKILL_ACCOUNT_GUIDE = {
   topUpUrl: 'https://www.meigen.ai/profile',
   mobileTopUpUrl: 'https://www.meigen.ai/m/premium',
   pricingUrl: 'https://www.meigen.ai/model-comparison',
-  connection: { remoteUrl: 'https://www.meigen.ai/api/mcp', remoteHeader: 'Authorization: Bearer <MeiGen API key>', localCommand: 'npx', localArgs: ['-y', 'meigen@2.0.1'], localTokenEnv: 'MEIGEN_API_TOKEN', setupUrl: 'https://www.meigen.ai/mcp' },
+  connection: { remoteUrl: 'https://www.meigen.ai/api/mcp', remoteHeader: 'Authorization: Bearer <MeiGen API key>', localCommand: 'npx', localArgs: ['-y', 'meigen@2.0.2'], localTokenEnv: 'MEIGEN_API_TOKEN', setupUrl: 'https://www.meigen.ai/mcp' },
   authentication: 'Sign in to MeiGen in a desktop browser and create an API key on the API Keys page (mobile does not expose key creation). Local npm: set MEIGEN_API_TOKEN in the MCP server environment. Remote HTTP: set Authorization: Bearer <key> in the host connection headers/credentials. Reconnect after updating credentials. Never request the secret in chat or put it in a URL. An npm publishing token is not a MeiGen API key.',
   credits: 'Use the same MeiGen account that owns the API key. On Profile choose Top Up; on mobile use the premium page. Purchase credits there, then return to the MCP conversation. API calls use purchased credits only, including the first background removal; daily free credits and Web free attempts are unavailable through the API. The model pricing page lists costs; it is not the checkout page.',
 } as const
@@ -66,11 +66,14 @@ export function skillNextAction(body: Record<string, unknown>, httpStatus: numbe
 
 /** Links are actual result URLs only, never prompt/reference URLs or unfinished outputs. */
 export function skillOutputLinks(body: Record<string, unknown>) {
-  const links: Array<{ type: 'resource_link'; uri: string; name: string; description: string }> = []
+  const links: Array<{ type: 'resource_link'; uri: string; name: string; description: string; mimeType?: string }> = []
   const add = (url: unknown, name: string) => {
     if (typeof url !== 'string' || links.some((link) => link.uri === url)) return
-    try { if (new URL(url).protocol !== 'https:') return } catch { return }
-    links.push({ type: 'resource_link', uri: url, name, description: 'Completed image: preview or download.' })
+    let parsed: URL
+    try { parsed = new URL(url); if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return } catch { return }
+    const extension = parsed.pathname.split('.').pop()?.toLowerCase() ?? ''
+    const mimeType = ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', avif: 'image/avif' } as Record<string, string>)[extension]
+    links.push({ type: 'resource_link', uri: url, name, description: 'Completed image: preview or download.', ...(mimeType ? { mimeType } : {}) })
   }
   add(body.imageUrl, 'Result image')
   if (Array.isArray(body.items)) for (const item of body.items as Array<Record<string, unknown>>) {

@@ -22,7 +22,7 @@ test('semantic search negotiates matched media and renders the returned image in
     assert.equal(url.searchParams.get('media'), 'matched-v1')
     assert.equal(url.searchParams.get('offset'), '40')
     return Response.json({ success: true, data: [{ id: 'hit', text: 'poster', likes: 2, views: 10,
-      thumbnail_url: 'first-thumb.jpg', media_urls: ['first.jpg','second.jpg'], matched_media_index: 1 }] })
+      thumbnail_url: 'https://images.meigen.ai/first-thumb.jpg', media_urls: ['https://images.meigen.ai/first.jpg','https://images.meigen.ai/second.jpg'], matched_media_index: 1 }] })
   }
   try {
     const result = await handler({ query: 'poster', limit: 3, offset: 40 })
@@ -99,5 +99,31 @@ test('an anonymous per-IP 429 keeps the one-minute wording and no bundled fallba
     const result = await run({ query: 'portrait', limit: 3 })
     assert.match(result.content[0].text, /retry in about a minute/)
     assert.doesNotMatch(result.content[0].text, /Found \d+ results/)
+  } finally { globalThis.fetch = previous }
+})
+
+test('caps over-returned API rows and returns a standard image for each selected match', async () => {
+  const sharp = (await import('sharp')).default
+  const bytes = await sharp({ create: { width: 8, height: 8, channels: 3, background: '#ff6600' } }).png().toBuffer()
+  const previous = globalThis.fetch, assets = []
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(input)
+    if (url.hostname === 'images.meigen.ai') {
+      assert.equal(new Headers(init?.headers).get('authorization'), null)
+      assets.push(url.href)
+      return new Response(new Uint8Array(bytes), { headers: { 'content-type': 'image/png' } })
+    }
+    return Response.json({ success: true, data: Array.from({ length: 10 }, (_, i) => ({ id: `hit-${i}`, text: 'poster', likes: 0, views: 0,
+      thumbnail_url: `https://images.meigen.ai/first-${i}.png`, media_urls: [`https://images.meigen.ai/first-${i}.png`, `https://images.meigen.ai/hit-${i}.png`], matched_media_index: 1 })) })
+  }
+  try {
+    const { run } = searchTool({ meigenBaseUrl: 'https://test.invalid', meigenApiToken: 'meigen_sk_fixture' })
+    const result = await run({ query: 'poster', limit: 10 })
+    assert.equal(result.content.filter(v => v.type === 'image').length, 3)
+    assert.equal(result.content.filter(v => v.type === 'resource_link').length, 3)
+    assert.deepEqual(assets, [0, 1, 2].map(i => `https://images.meigen.ai/hit-${i}.png`))
+    assert.doesNotMatch(JSON.stringify(result), /first-|hit-3/)
+    const fewer = await run({ query: 'poster', limit: 1 })
+    assert.equal(fewer.content.filter(v => v.type === 'image').length, 1)
   } finally { globalThis.fetch = previous }
 })

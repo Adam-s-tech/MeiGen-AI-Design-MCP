@@ -8,14 +8,14 @@ A source change is not a publication. Record the source commit, selected version
 |---|---|---|
 | npm `meigen` | `package.json`, lockfile, runtime server version | Registry package; MCP configuration pins refer to this version |
 | Self-owned Claude marketplace | `.claude-plugin/marketplace.json` entry and `plugin/.claude-plugin/plugin.json` | Keep these two versions equal; they may differ from npm |
-| ClawHub standalone Skill `creative-toolkit` | `openclaw/SKILL.md` and `openclaw/references/` | Independent Skill version; this change prepares **1.0.38**, following the repository's 1.0.37 source, not a claim about the current registry latest |
+| ClawHub standalone Skill `creative-toolkit` | `openclaw/SKILL.md` and `openclaw/references/` | Independent Skill version; this change prepares **1.0.39**; re-read the registry latest before publication and increment it if necessary |
 | ClawHub plugin `meigen-ai-design` | `plugin/openclaw.plugin.json` and `plugin/` | Independent plugin version; static MCP pin follows npm |
 | `wshobson/agents` | Upstream's `plugins/meigen-ai-design` and marketplace entry | Separate reviewed PR; verify that upstream checkout's packaging and version |
 | `meigen-docs` | English and Chinese public documentation | Separate deployment and link/API contract checks |
 | Aggregator listings | Each site's listing | Separate submission/update; do not infer completion from GitHub or npm |
 | Web/remote MCP | Web deployment | Separate API deployment; refresh the host's remote tool list afterward |
 
-npm, the self-owned Claude plugin manifest and the OpenClaw plugin manifest are all prepared at 2.0.1 — the reference video & audio arrays ship in this version, and the OpenClaw plugin moves with them because its static MCP pin changed. The ClawHub standalone Skill stays on its own 1.0.38 line. Do not mechanically bump all channels together. Before an authorized release, read the destination's current versions and reserve a valid next version for that channel; if access fails, record that verification is pending.
+npm is prepared at **2.0.2** for the capability/preview compatibility update. Static npm pins follow that version. Distribution manifests keep their independent release versions; this review does not claim their publication. Before an authorized release, verify the destination's versions and record acceptance separately.
 
 ## Validate before requesting a release
 
@@ -30,14 +30,14 @@ bash scripts/ci/check-pinned-npm.sh
 pnpm release:dry-run
 ```
 
-CI imports the existing npm lockfile with `pnpm import` and installs using the resulting frozen pnpm lock. A failed locked install is a failure, not permission to fall back to an unlocked install.
+CI first validates package.json against package-lock.json with `npm ci --dry-run --ignore-scripts`, then imports the existing npm lockfile with `pnpm import` and installs using the resulting frozen pnpm lock. A failed locked install is a failure, not permission to fall back to an unlocked install.
 
-`dry-run` runs package packing without registry writes or loading `.env.local`; it bypasses pnpm's clean-tree requirement only for the dry run. `prepack` rebuilds `dist`. Review the file listing: the package allowlist is `bin`, `dist`, `data`, `SKILLS_API.md`, `COMPOSABLE_WORKFLOWS.md`, and `COMPOSABLE_WORKFLOWS.zh-CN.md`, plus standard package metadata/docs. Secrets, private npm config, tests, and unrelated worktree files must stay out. A local dry run does not prove registry authentication, available version, or publishing rights.
+`dry-run` runs package packing without registry writes or loading `.env.local`; it bypasses pnpm's clean-tree requirement only for the dry run. `prepack` rebuilds `dist`. Review the file listing: the package allowlist is `bin`, `dist`, `data`, `SKILLS_API.md`, `COMPOSABLE_WORKFLOWS.md`, `COMPOSABLE_WORKFLOWS.zh-CN.md`, and `MCP_AUTH_AND_RESULTS.md`, plus standard package metadata/docs. Secrets, private npm config, tests, and unrelated worktree files must stay out. A local dry run does not prove registry authentication, available version, or publishing rights.
 
 For a release involving both repositories, explicitly run this additional check with the actual Web checkout path:
 
 ```sh
-node scripts/ci/check-guidance-sync.mjs /path/to/meigen-web
+node scripts/ci/check-guidance-sync.mjs /path/to/meigen-web --published
 ```
 
 It compares npm `src/lib/skill-guidance.ts` with Web `src/lib/skills/mcp-guidance.ts` and checks the Web npm pin. It is intentionally not a default CI requirement: an independent npm clone does not need a sibling Web checkout. Both repositories still need their own tests and deployment review.
@@ -73,7 +73,7 @@ It runs `npm stage publish`, requires a clean Git tree and a CLI that supports s
 
 ## Deployment and distribution order
 
-Deploy the reviewed Web APIs first: the durable ordinary-generation request contract on `POST /api/generate/v2`, authenticated `GET /api/generate/v2/requests/{requestId}`, structured remote MCP tools, and the five Skill APIs including `upscale_image`. Verify exact-ID replay, transient in-progress 503 (including npm 1.4.0 key retention), changed-input 409, request lookup after key rotation, 402 recovery, the reference video/audio arrays and the remote catalog before distributing npm 2.0.1. Explicit local requestId calls (including wait=false) and requestId recovery depend on this endpoint. Deploying npm ahead of the matching backend blocks those calls with endpoint_unavailable / check_backend; an HTML or unrecognized JSON 404 never permits automatic submission. Known generationId status still uses the existing status endpoint. This release depends on the generation worker admission migration kept in the Web repo (`scripts/release/generation-worker-admission.sql`: the `generations.processing_claim_token` column plus the `claim_generation_worker` / `fail_generation_admission` RPCs; applied to production on 2026-09-17). Apply it to any other environment before deploying that environment's Web backend — the new `/process` refuses to run without it. It does not re-enable a global generation quota.
+Deploy the reviewed Web APIs first: the durable ordinary-generation request contract on `POST /api/generate/v2`, authenticated `GET /api/generate/v2/requests/{requestId}`, structured remote MCP tools, and the five Skill APIs including `upscale_image`. Verify exact-ID replay, transient in-progress 503 (including npm 1.4.0 key retention), changed-input 409, request lookup after key rotation, 402 recovery, the reference video/audio arrays and the remote catalog before distributing npm 2.0.2. Explicit local requestId calls (including wait=false) and requestId recovery depend on this endpoint. Deploying npm ahead of the matching backend blocks those calls with endpoint_unavailable / check_backend; an HTML or unrecognized JSON 404 never permits automatic submission. Known generationId status still uses the existing status endpoint. This release depends on the generation worker admission migration kept in the Web repo (`scripts/release/generation-worker-admission.sql`: the `generations.processing_claim_token` column plus the `claim_generation_worker` / `fail_generation_admission` RPCs; applied to production on 2026-09-17). Apply it to any other environment before deploying that environment's Web backend — the new `/process` refuses to run without it. It does not re-enable a global generation quota.
 
 A backend rollback must retain the compatible request-recovery and durable POST contracts. If a route becomes unavailable, restore it and verify existing IDs before resuming affected workflows. Preserve caller IDs and local receipts; do not treat a missing route as a missing job or ask every user to withdraw an already installed npm package. Include HTML/unknown-JSON 404 (zero paid POST), structured request_not_found, bounded observation retries/cancellation, and completed media-mismatch results in release smoke checks.
 
@@ -82,3 +82,5 @@ Then, after authorization for each channel, release npm, update the self-owned C
 Official packaging references: [Claude plugin MCP configuration](https://code.claude.com/docs/en/plugins-reference), [OpenClaw native MCP declarations](https://docs.openclaw.ai/plugins/manifest/surfaces), [OpenClaw bundle compatibility](https://docs.openclaw.ai/plugins/bundles).
 
 Standalone API image preparation requires a positive purchased-credit balance (upload itself does not charge). Upscale run additionally checks the selected live model, accepted initial price and full eligible balance before preprocessing, then rechecks price before dispatch. Session crisp retains daily credits; API calls use purchased credits only. All-channel Upscale preprocessing uses the existing 1,000-per-day ceiling and a per-instance two-operation memory guard. These are not a distributed byte budget or a charge for uploads. Both MCP Upscale schemas require `confirmedCredits` on the first call as well as retries; refresh cached tool schemas. Ship the matching App resize-confirmation UI: older App versions encountering oversized originals are told to update or confirm through the Web, without silently accepting resizing. Unlimited remains disabled; its legacy RPC bypass is tracked separately and is not part of this release.
+
+The 2.0.2 release allowlist also includes `MCP_AUTH_AND_RESULTS.md`. CI uses Node 24 (the project runtime). Keep Web installation guidance on 2.0.1 until 2.0.2 is verified on npm; update content.ts, McpLanding.tsx, page.tsx softwareVersion and mcp-guidance.ts together in the public-doc release.

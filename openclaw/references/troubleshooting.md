@@ -13,11 +13,11 @@
 | Interrupted ordinary image/video generation | Use `check_generation` with the original `requestId` or returned `generationId`; request-ID lookup works across restarts. Keep exact inputs and IDs on transient failure. A new ID starts a new paid attempt. |
 | BYOK billing error | Check the configured provider's account and billing; topping up MeiGen does not repair another provider's balance. |
 | ComfyUI connection refused | Confirm the configured server is running and its URL is reachable. This does not affect MeiGen-only Skill authentication. |
-| New tools missing | Confirm `meigen@2.0.1` is actually available from npm, update the MCP pin, and reconnect. Remote tools require backend deployment and a refreshed tool list. |
+| New tools missing | Confirm `meigen@2.0.2` is actually available from npm, update the MCP pin, and reconnect. Remote tools require backend deployment and a refreshed tool list. |
 
 ## Data handling
 
-The standalone Skill starts the pinned `meigen@2.0.1` MCP package. Source is available at https://github.com/jau123/MeiGen-AI-Design-MCP. A version pin does not itself establish an installed release's behavior; inspect the package you run.
+The standalone Skill starts the pinned `meigen@2.0.2` MCP package. Source is available at https://github.com/jau123/MeiGen-AI-Design-MCP. A version pin does not itself establish an installed release's behavior; inspect the package you run.
 
 **Reference data leaves the machine on cloud routes.** MeiGen generation and Skills send prompts, references and job metadata to MeiGen and its selected generation providers. Preparing a reference can upload it to the configured upload service/CDN and return a publicly accessible URL. Treat these as shareable links, not private attachments. Do not promise a retention period or a deletion guarantee. Upscale uses the original source URL and its own backend preparation; it must not use the standard compressed-reference path.
 

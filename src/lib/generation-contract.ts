@@ -21,10 +21,25 @@ export const generationOutputSchema = {
 }
 export type GenerationOutput = z.infer<z.ZodObject<typeof generationOutputSchema>>
 
+/** Completed remote artifacts remain usable even when a host cannot render a preview. */
+export function generationResources(body: GenerationOutput) {
+  if (!body.success || body.status !== 'completed') return []
+  return [...new Set([...body.urls, body.imageUrl, body.videoUrl].filter((v): v is string => !!v))].flatMap((uri, index) => {
+    let url: URL
+    try { url = new URL(uri) } catch { return [] }
+    if (url.protocol !== 'https:' || url.username || url.password) return []
+    const extension = url.pathname.split('.').pop()?.toLowerCase() ?? ''
+    const mimeType = ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp',
+      avif: 'image/avif', gif: 'image/gif', mp4: 'video/mp4', webm: 'video/webm' } as Record<string, string>)[extension]
+    return [{ type: 'resource_link' as const, uri, name: `MeiGen ${body.mediaType ?? 'media'} ${index + 1}`,
+      ...(mimeType ? { mimeType } : {}) }]
+  })
+}
+
 export function generationResult(body: GenerationOutput) {
   // Keep the text fallback exactly equivalent to the structured payload on all hosts.
   body = JSON.parse(JSON.stringify(body)) as GenerationOutput
-  return { content: [{ type: 'text' as const, text: JSON.stringify(body) }], structuredContent: body, ...(!body.success ? { isError: true } : {}) }
+  return { content: [{ type: 'text' as const, text: JSON.stringify(body) }, ...generationResources(body)], structuredContent: body, ...(!body.success ? { isError: true } : {}) }
 }
 
 export class GenerationError extends Error {

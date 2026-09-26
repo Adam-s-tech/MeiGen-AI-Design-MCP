@@ -1,7 +1,7 @@
 ---
 name: "AI Image & Video Generator — GPT Image 2, Seedance, ComfyUI"
 description: Compose MeiGen image/video and five dedicated image tools inside an existing workflow, or opt into creative planning. Preserves caller prompts, parameters, approved count and budget; includes discovery and recoverable task handles.
-version: 1.0.38
+version: 1.0.39
 homepage: https://github.com/jau123/MeiGen-AI-Design-MCP
 metadata: {"clawdbot":{"emoji":"🎨","requires":{"bins":["mcporter","npx","node"]}}}
 ---
@@ -19,7 +19,7 @@ Merge this server into your mcporter configuration (`~/.config/mcporter/config.j
   "mcpServers": {
     "creative-toolkit": {
       "command": "npx",
-      "args": ["-y", "meigen@2.0.1"]
+      "args": ["-y", "meigen@2.0.2"]
     }
   }
 }
