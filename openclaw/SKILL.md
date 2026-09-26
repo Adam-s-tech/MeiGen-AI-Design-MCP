@@ -1,7 +1,7 @@
 ---
-name: "AI Image & Video Generator — GPT Image 2, Seedance, ComfyUI"
+name: "MeiGen AI Image & Video Generator"
 description: Compose MeiGen image/video and five dedicated image tools inside an existing workflow, or opt into creative planning. Preserves caller prompts, parameters, approved count and budget; includes discovery and recoverable task handles.
-version: 1.0.39
+version: 2.0.2
 homepage: https://github.com/jau123/MeiGen-AI-Design-MCP
 metadata: {"clawdbot":{"emoji":"🎨","requires":{"bins":["mcporter","npx","node"]}}}
 ---

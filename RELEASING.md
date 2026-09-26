@@ -8,7 +8,7 @@ A source change is not a publication. Record the source commit, selected version
 |---|---|---|
 | npm `meigen` | `package.json`, lockfile, runtime server version | Registry package; MCP configuration pins refer to this version |
 | Self-owned Claude marketplace | `.claude-plugin/marketplace.json` entry and `plugin/.claude-plugin/plugin.json` | Keep these two versions equal; they may differ from npm |
-| ClawHub standalone Skill `creative-toolkit` | `openclaw/SKILL.md` and `openclaw/references/` | Independent Skill version; this change prepares **1.0.39**; re-read the registry latest before publication and increment it if necessary |
+| ClawHub standalone Skill `creative-toolkit` | `openclaw/SKILL.md` and `openclaw/references/` | Independent Skill version; published as **2.0.2** (aligned with the ClawHub plugin and npm on 2026-09-26); re-read the registry latest before publication and increment it if necessary |
 | ClawHub plugin `meigen-ai-design` | `plugin/openclaw.plugin.json` and `plugin/` | Independent plugin version; static MCP pin follows npm |
 | `wshobson/agents` | Upstream's `plugins/meigen-ai-design` and marketplace entry | Separate reviewed PR; verify that upstream checkout's packaging and version |
 | `meigen-docs` | English and Chinese public documentation | Separate deployment and link/API contract checks |
